@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         String   @default("OWNER") // OWNER | INVESTOR | ADMIN
+  createdAt    DateTime @default(now())
+
+  properties Property[]
+  inquiries  Inquiry[]  @relation("InquiryFromUser")
+}
+
+model Property {
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  city            String
+  district        String?
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  propertyType    String   // APARTMENT | VILLA | LAND | COMMERCIAL | BUILDING
+  listingType     String   // SALE | PARTIAL_SALE | INVESTMENT
+  price           Float
+  area            Float
+  bedrooms        Int?
+  bathrooms       Int?
+  yearBuilt       Int?
+  images          String   @default("[]") // JSON array of URLs
+  status          String   @default("PENDING_REVIEW") // PENDING_REVIEW | CERTIFIED | REJECTED | SOLD
+  isCertified     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  ownerId String
+  owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  report    EngineeringReport?
+  inquiries Inquiry[]
+}
+
+model EngineeringReport {
+  id                    String   @id @default(cuid())
+  structuralCondition   String   // EXCELLENT | GOOD | FAIR | POOR
+  finishingQuality      String
+  electricalCondition   String
+  mechanicalCondition   String
+  riskLevel             String   // LOW | MEDIUM | HIGH
+  estimatedLifespan     Int      // years
+  valueUpliftPotential  Float?   // percentage
+  upliftScope           String?
+  upliftCost            Float?
+  upliftDurationMonths  Int?
+  expectedReturnPct     Float?
+  recommendations       String
+  certifiedBy           String   @default("Alarrab Engineering & Partner")
+  issuedAt              DateTime @default(now())
+
+  propertyId String   @unique
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model Inquiry {
+  id         String   @id @default(cuid())
+  message    String
+  contact    String
+  status     String   @default("NEW") // NEW | CONTACTED | CLOSED
+  createdAt  DateTime @default(now())
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  fromUserId String?
+  fromUser   User?    @relation("InquiryFromUser", fields: [fromUserId], references: [id], onDelete: SetNull)
+}
