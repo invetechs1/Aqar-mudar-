@@ -76,18 +76,20 @@ async function main() {
       },
     },
     {
-      title: "شقة استثمارية في حي العليا",
+      title: "شقة استثمارية في حي العليا (بيع جزئي)",
       description:
-        "شقة في برج حديث بموقع مميز، مؤجرة حاليًا بعائد سنوي جيد. فرصة استثمارية ممتازة للدخل الشهري.",
+        "شقة في برج حديث بموقع مميز، مؤجرة حاليًا بعائد سنوي جيد. متاحة عبر البيع الجزئي — استثمر بأي حصة تناسبك.",
       city: "الرياض",
       district: "حي العليا",
       propertyType: "APARTMENT",
-      listingType: "INVESTMENT",
+      listingType: "PARTIAL_SALE",
       price: 950000,
       area: 145,
       bedrooms: 3,
       bathrooms: 2,
       yearBuilt: 2021,
+      totalShares: 950,
+      sharePriceSAR: 1000,
       images: JSON.stringify([
         "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200",
       ]),

@@ -8,7 +8,9 @@ import {
   CONDITION_AR,
   RISK_AR,
 } from "@/lib/format";
+import Link from "next/link";
 import { InquiryForm } from "@/components/InquiryForm";
+import { PropertyMap } from "@/components/PropertyMap";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +96,16 @@ export default async function PropertyDetailPage({
               {property.description}
             </p>
           </div>
+
+          {property.latitude != null && property.longitude != null && (
+            <div className="card p-6">
+              <h2 className="font-bold mb-3">الموقع على الخريطة</h2>
+              <PropertyMap
+                latitude={property.latitude}
+                longitude={property.longitude}
+              />
+            </div>
+          )}
 
           {/* Engineering report */}
           {r ? (
@@ -182,6 +194,27 @@ export default async function PropertyDetailPage({
             <div className="text-3xl font-black text-brand-700 mb-4">
               {formatSAR(property.price)}
             </div>
+
+            {property.listingType === "PARTIAL_SALE" &&
+              property.totalShares &&
+              property.sharePriceSAR && (
+                <div className="rounded-lg bg-brand-50 border border-brand-200 p-4 mb-4">
+                  <div className="text-xs text-brand-800 font-semibold mb-1">
+                    بيع جزئي — استثمر بحصص
+                  </div>
+                  <div className="text-sm text-slate-700 mb-3">
+                    {formatSAR(property.sharePriceSAR)} / حصة ·{" "}
+                    {property.totalShares - property.soldShares} حصة متاحة
+                  </div>
+                  <Link
+                    href={`/properties/${property.id}/invest`}
+                    className="btn-primary w-full"
+                  >
+                    استثمر الآن →
+                  </Link>
+                </div>
+              )}
+
             <div className="border-t border-slate-200 pt-4 mb-4">
               <div className="text-sm text-slate-500 mb-1">المالك</div>
               <div className="font-semibold">{property.owner.name}</div>

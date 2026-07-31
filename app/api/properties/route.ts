@@ -17,7 +17,11 @@ const createSchema = z.object({
   bedrooms: z.number().int().nonnegative().optional(),
   bathrooms: z.number().int().nonnegative().optional(),
   yearBuilt: z.number().int().min(1900).max(new Date().getFullYear()).optional(),
-  images: z.array(z.string().url()).max(10).default([]),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  totalShares: z.number().int().positive().optional(),
+  sharePriceSAR: z.number().positive().optional(),
+  images: z.array(z.string().min(1)).max(10).default([]),
 });
 
 export async function GET(req: NextRequest) {

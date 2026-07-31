@@ -2,21 +2,21 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ImageUploader } from "./ImageUploader";
+import { LocationPicker } from "./LocationPicker";
 
 export function PropertyForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     const fd = new FormData(e.currentTarget);
-    const imagesStr = String(fd.get("images") ?? "").trim();
-    const images = imagesStr
-      ? imagesStr.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
-      : [];
 
     const payload = {
       title: String(fd.get("title") ?? ""),
@@ -31,6 +31,8 @@ export function PropertyForm() {
       bedrooms: fd.get("bedrooms") ? Number(fd.get("bedrooms")) : undefined,
       bathrooms: fd.get("bathrooms") ? Number(fd.get("bathrooms")) : undefined,
       yearBuilt: fd.get("yearBuilt") ? Number(fd.get("yearBuilt")) : undefined,
+      latitude: coords?.lat,
+      longitude: coords?.lng,
       images,
     };
 
@@ -125,11 +127,14 @@ export function PropertyForm() {
       </div>
 
       <div>
-        <label className="label">صور العقار (روابط، سطر لكل صورة)</label>
-        <textarea
-          name="images"
-          className="input min-h-[80px]"
-          placeholder="https://..."
+        <label className="label">صور العقار</label>
+        <ImageUploader value={images} onChange={setImages} />
+      </div>
+
+      <div>
+        <label className="label">موقع العقار على الخريطة</label>
+        <LocationPicker
+          onChange={(lat, lng) => setCoords({ lat, lng })}
         />
       </div>
 

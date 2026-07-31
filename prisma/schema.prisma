@@ -16,8 +16,9 @@ model User {
   role         String   @default("OWNER") // OWNER | INVESTOR | ADMIN
   createdAt    DateTime @default(now())
 
-  properties Property[]
-  inquiries  Inquiry[]  @relation("InquiryFromUser")
+  properties  Property[]
+  inquiries   Inquiry[]     @relation("InquiryFromUser")
+  investments Investment[]
 }
 
 model Property {
@@ -45,8 +46,14 @@ model Property {
   ownerId String
   owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  report    EngineeringReport?
-  inquiries Inquiry[]
+  report      EngineeringReport?
+  inquiries   Inquiry[]
+  investments Investment[]
+
+  // Partial-sale config (used when listingType = PARTIAL_SALE)
+  totalShares       Int?     // total shares available
+  sharePriceSAR     Float?   // price per share
+  soldShares        Int      @default(0)
 }
 
 model EngineeringReport {
@@ -82,4 +89,20 @@ model Inquiry {
 
   fromUserId String?
   fromUser   User?    @relation("InquiryFromUser", fields: [fromUserId], references: [id], onDelete: SetNull)
+}
+
+model Investment {
+  id                    String   @id @default(cuid())
+  shares                Int
+  amountSAR             Float
+  status                String   @default("PENDING") // PENDING | PAID | FAILED | REFUNDED
+  stripePaymentIntentId String?  @unique
+  createdAt             DateTime @default(now())
+  paidAt                DateTime?
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
