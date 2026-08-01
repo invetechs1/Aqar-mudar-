@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { formatSAR } from "@/lib/format";
 import { InvestForm } from "@/components/InvestForm";
 import { isStripeConfigured } from "@/lib/stripe";
+import { isMoyasarConfigured } from "@/lib/moyasar";
 
 export default async function InvestPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -25,6 +26,8 @@ export default async function InvestPage({ params }: { params: { id: string } })
 
   const remaining = property.totalShares - property.soldShares;
   const soldPct = Math.round((property.soldShares / property.totalShares) * 100);
+  const moyasarAvailable = isMoyasarConfigured();
+  const stripeAvailable = isStripeConfigured();
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
@@ -58,19 +61,15 @@ export default async function InvestPage({ params }: { params: { id: string } })
             <span>{soldPct}%</span>
           </div>
           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-brand-600"
-              style={{ width: `${soldPct}%` }}
-            />
+            <div className="h-full bg-brand-600" style={{ width: `${soldPct}%` }} />
           </div>
         </div>
       </div>
 
-      {!isStripeConfigured() && (
+      {!moyasarAvailable && !stripeAvailable && (
         <div className="card p-4 mb-4 bg-amber-50 border-amber-200 text-sm text-amber-800">
-          ⚠️ بوابة الدفع (Stripe) غير مهيأة. أضف <code>STRIPE_SECRET_KEY</code>{" "}
-          و <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> في ملف <code>.env</code>{" "}
-          لتفعيل الدفع الفعلي.
+          ⚠️ لم يتم تهيئة أي بوابة دفع. أضف مفاتيح <code>MOYASAR_SECRET_KEY</code>{" "}
+          أو <code>STRIPE_SECRET_KEY</code> في <code>.env</code>.
         </div>
       )}
 
@@ -78,6 +77,8 @@ export default async function InvestPage({ params }: { params: { id: string } })
         propertyId={property.id}
         sharePrice={property.sharePriceSAR}
         maxShares={remaining}
+        moyasarAvailable={moyasarAvailable}
+        stripeAvailable={stripeAvailable}
       />
     </div>
   );

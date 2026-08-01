@@ -1,6 +1,6 @@
 # عقار مدر — Aqar Mudar
 
-منصة الاستثمار العقاري الموثوق والمعتمد هندسيًا.
+منصة الاستثمار العقاري الموثوق والمعتمد هندسيًا للسوق السعودي.
 
 **منتج من First Ex — Powered by Bassir Technology**
 
@@ -8,72 +8,84 @@
 
 ---
 
-## نبذة
+## نظرة سريعة على الجاهزية
 
-عقار مدر منصة عقارية سعودية تربط ملاك العقارات والمستثمرين مع الاستشاري الهندسي والمقاول ضمن منظومة رقمية متكاملة. أي عقار على المنصة لا يُنشر قبل حصوله على **اعتماد العراب (Alarrab Certified)** — تقرير فني شامل من Alarrab Engineering & Partner يوضح الحالة الإنشائية، جودة التشطيبات، الأنظمة الكهربائية والميكانيكية، مستوى المخاطر، والعمر الافتراضي التقديري، بالإضافة إلى فرص رفع القيمة السوقية عبر دراسات التطوير من Azoom United Contracting.
-
----
+| المحور | الحالة |
+|--------|:------:|
+| البنية التقنية (Postgres، Docker، Health، Logging) | ✅ |
+| الأمان (Rate limit، CSP، CSRF، سياسة كلمات مرور، Audit Log) | ✅ |
+| المصادقة (تحقق البريد، إعادة كلمة المرور، OTP جوال، TOTP 2FA) | ✅ |
+| التحقق من الهوية (نفاذ — scaffold + mock mode) | ✅ |
+| المدفوعات السعودية (Moyasar) + Stripe كبديل + Refunds | ✅ |
+| تخزين الملفات (S3 adapter) + Sharp للتحسين | ✅ |
+| البريد (Resend) + قوالب + SMS (Twilio) + In-app Notifications | ✅ |
+| الوثائق القانونية (Terms، Privacy PDPL، AML، Refund، Disclaimer) | ✅ |
+| اختبارات (Vitest unit + Playwright e2e) + CI/CD (GitHub Actions) | ✅ |
+| SEO (Sitemap، Robots، JSON-LD، OpenGraph) + GA4 | ✅ |
+| صفحات ثابتة (عن المنصة، تواصل، أسئلة شائعة، 404، 500) | ✅ |
+| i18n كامل (عربي/إنجليزي مع تبديل RTL) | ✅ |
+| **رخصة الوساطة العقارية / CMA** — يحتاج إجراء قانوني | 🚨 خارج نطاق الكود |
+| **حساب تاجر Moyasar فعلي** — يحتاج تسجيل | 🚨 خارج نطاق الكود |
+| **API keys لنفاذ فعلي** — يحتاج تسجيل | 🚨 خارج نطاق الكود |
 
 ## المكدس التقني
 
 - **Next.js 14** (App Router) + **TypeScript**
-- **Tailwind CSS** مع دعم RTL كامل وخط Tajawal العربي
-- **Prisma** ORM
-- **SQLite** افتراضيًا للـ MVP (قابل للتبديل إلى Postgres بتغيير سطر واحد)
-- **NextAuth.js** (Credentials Provider) مع bcrypt
-- **Zod** للتحقق من صحة المدخلات
-
-## المزايا في هذا الـ MVP
-
-- تسجيل / دخول متعدد الأدوار (مالك، مستثمر، أدمن)
-- إنشاء وعرض العقارات مع **رفع صور فعلي** إلى `public/uploads/`
-- بطاقة العقار مع بادج "العراب Certified"
-- صفحة تفاصيل العقار مع التقرير الهندسي الكامل ودراسة رفع القيمة
-- **خرائط تفاعلية** بـ Leaflet + OpenStreetMap (اختيار الموقع + عرض)
-- نظام استفسارات مباشر على العقار
-- لوحة تحكم للمالك (إحصاءات، عقاراته، استفساراته)
-- **لوحة أدمن** لاعتماد التقارير الهندسية ونشر العقارات
-- تصفية العقارات (المدينة، النوع، الاعتماد)
-- **دعم لغتين (عربي/إنجليزي)** مع تبديل RTL/LTR حسب اللغة
-- **بوابة دفع Stripe** للبيع الجزئي (شراء حصص + Webhook)
+- **Tailwind CSS** + دعم RTL كامل + خطوط Tajawal/Inter
+- **PostgreSQL 16** عبر **Prisma** ORM
+- **NextAuth.js** (Credentials + JWT + secure cookies + TOTP)
+- **Zod** لكل مدخلات API
+- **Sharp** لتحسين الصور (تحويل تلقائي إلى WebP)
+- **AWS SDK v3** لتخزين S3-compatible (AWS/R2/MinIO)
+- **Moyasar** بوابة دفع سعودية + **Stripe** كبديل
+- **Resend** بريد + **Twilio** SMS + **Sentry** hooks
+- **Playwright** + **Vitest** للاختبارات
+- **Docker** + **docker-compose** للنشر
 
 ---
 
 ## التشغيل محليًا
 
-### المتطلبات
-
-- Node.js 18.17+ (يُفضّل 20+)
-- npm أو pnpm
-
-### الخطوات
+### السريع (Docker Compose)
 
 ```bash
-# 1) تثبيت الحزم
+cp .env.example .env
+# generate a strong secret
+openssl rand -base64 32 | xargs -I {} sed -i 's|NEXTAUTH_SECRET=.*|NEXTAUTH_SECRET="{}"|' .env
+
+docker-compose up --build
+```
+
+يفتح على `http://localhost:3000`.
+
+### التطوير المحلي
+
+```bash
+# 1) شغّل Postgres محليًا (أو استخدم docker-compose up db)
+docker-compose up -d db
+
+# 2) ثبّت الحزم
 npm install
 
-# 2) تجهيز ملف البيئة
+# 3) هيّئ .env
 cp .env.example .env
 
-# 3) إنشاء قاعدة البيانات وتشغيل الميغرشن
+# 4) قاعدة البيانات
 npx prisma db push
-
-# 4) تعبئة بيانات تجريبية (3 عقارات + 3 حسابات)
 npm run db:seed
 
-# 5) تشغيل الخادم
+# 5) تشغيل
 npm run dev
 ```
 
-افتح المتصفح على `http://localhost:3000`
-
-### حسابات تجريبية
+### حسابات تجريبية (بعد seed)
 
 | الدور | البريد | كلمة المرور |
 |------|-------|-------------|
-| أدمن | admin@aqarmudar.sa | password123 |
-| مالك | owner@aqarmudar.sa | password123 |
-| مستثمر | investor@aqarmudar.sa | password123 |
+| Admin | admin@aqarmudar.sa | Password123! |
+| Owner | owner@aqarmudar.sa | Password123! |
+| Investor | investor@aqarmudar.sa | Password123! |
+| Engineer | engineer@aqarmudar.sa | Password123! |
 
 ---
 
@@ -81,114 +93,178 @@ npm run dev
 
 ```
 app/
-  layout.tsx              # RTL layout + الرأس والتذييل
-  page.tsx                # الصفحة الرئيسية (Hero + الفئات + عقارات مميزة)
-  properties/
-    page.tsx              # قائمة العقارات مع الفلاتر
-    [id]/page.tsx         # صفحة تفاصيل العقار مع التقرير الهندسي
-    new/page.tsx          # إضافة عقار (يتطلب تسجيل دخول)
-  auth/
-    signin/page.tsx       # تسجيل الدخول
-    signup/page.tsx       # إنشاء حساب
-  dashboard/page.tsx      # لوحة تحكم المالك
+  layout.tsx                 # RTL/LTR ديناميكي + SEO + GA + JSON-LD
+  page.tsx                   # الصفحة الرئيسية
+  properties/                # قائمة + تفاصيل + إضافة + استثمار + callback
+  auth/                      # signin, signup, verify-email, forgot/reset
+  admin/                     # لوحة الأدمن + certify
+  dashboard/                 # لوحة المستخدم + verify (2FA/OTP/Nafath)
+  legal/                     # 6 مستندات قانونية بالعربية
+  about, contact, faq        # صفحات ثابتة
   api/
-    auth/[...nextauth]/   # NextAuth
-    auth/signup/          # POST تسجيل
-    properties/           # GET + POST
-    properties/[id]/      # GET + DELETE
-    inquiries/            # POST
+    auth/                    # signup, verify-email, forgot/reset, phone, 2fa
+    properties/              # CRUD
+    admin/                   # certify, refund
+    payments/                # moyasar (create + webhook) + stripe (create + webhook)
+    upload/                  # image upload with Sharp
+    nafath/                  # request + verify
+    health/                  # DB + uptime check
+    locale/                  # AR/EN cookie toggle
+    inquiries/
 components/
-  Header.tsx, Footer.tsx, Providers.tsx
-  PropertyCard.tsx, PropertyForm.tsx, InquiryForm.tsx
+  Header, Footer, Providers
+  PropertyCard, PropertyForm, PropertyMap, LocationPicker
+  ImageUploader, InvestForm, InquiryForm
+  CertifyForm, VerifyPanel
+  LocaleSwitcher, Analytics, JsonLd
 lib/
-  prisma.ts               # عميل Prisma singleton
-  auth.ts                 # إعدادات NextAuth
-  format.ts               # دوال تنسيق + قواميس عربية
+  prisma, auth, env, logger
+  password, totp, rateLimit, audit
+  email, sms, notify (+ tokens)
+  storage (Sharp + local/S3)
+  moyasar, stripe, nafath
+  i18n, format
+middleware.ts                # security headers + CSP
 prisma/
-  schema.prisma           # مخطط قاعدة البيانات
-  seed.ts                 # بيانات تجريبية
+  schema.prisma              # 9 models + 10 enums + indexes
+  seed.ts
+tests/
+  unit/ (Vitest)             # password, totp, i18n
+  e2e/ (Playwright)          # landing, locale, health
+.github/workflows/
+  ci.yml                     # lint + typecheck + unit + e2e + docker build
+Dockerfile + docker-compose.yml
 ```
 
 ---
 
-## نموذج البيانات
+## الميزات الوظيفية
 
-- **User** — id, email, passwordHash, name, phone, role (OWNER | INVESTOR | ADMIN)
-- **Property** — تفاصيل العقار كاملة + status (PENDING_REVIEW | CERTIFIED | REJECTED | SOLD)
-- **EngineeringReport** — التقرير الهندسي المرتبط بالعقار (علاقة 1:1)
-- **Inquiry** — استفسارات على العقارات (مسجل أو زائر)
+### إدارة العقارات
+- CRUD كامل مع صور مُحسَّنة تلقائيًا (WebP، thumbnails)
+- خرائط Leaflet + OSM (اختيار موقع + عرض)
+- بادج `Alarrab Certified` بعد الاعتماد
+- تصفية بالمدينة، النوع، نوع العرض، الاعتماد
+
+### الاعتماد الهندسي
+- 6 مؤشرات هندسية (الحالة الإنشائية، التشطيبات، الكهرباء، الميكانيكا، المخاطر، العمر)
+- دراسة رفع القيمة (النسبة، النطاق، التكلفة، المدة، العائد)
+- Admin form + transaction لقلب `isCertified=true`
+
+### الاستثمار (بيع جزئي)
+- **Moyasar** (مدى، Apple Pay، STC Pay، بطاقات) — الافتراضي للسعودية
+- **Stripe** كبديل للبطاقات الدولية
+- Webhook مع تحقق التوقيع + Investment status transitions
+- صفحة callback + إيصال بريد
+- استرداد من لوحة الأدمن
+
+### المصادقة والأمان
+- كلمات مرور قوية (10+، upper/lower/digit/symbol، blocklist)
+- تفعيل البريد + إعادة تعيين + OTP جوال
+- TOTP 2FA (RFC 6238، بدون تبعية خارجية)
+- Rate limiting على كل نقاط الحساسية
+- CSP، HSTS، nosniff، Frame-DENY
+- Audit Log مع IP + user-agent
+
+### الامتثال والقانوني
+- 6 وثائق قانونية عربية (Terms، Privacy PDPL، Cookies، AML، Refund، Disclaimer)
+- التحقق عبر نفاذ (scaffold + mock mode للتطوير)
+- سجلات KYC + حفظ 10 سنوات (متطلب نظامي)
+
+### التسويق والـ SEO
+- OpenGraph + Twitter cards
+- JSON-LD (Organization + RealEstateListing + FAQPage)
+- sitemap.xml ديناميكي
+- robots.txt
+- GA4 اختياري
+- OG images أوتوماتيك
 
 ---
 
-## التبديل إلى Postgres
+## المتطلبات الخارجية (خارج نطاق الكود)
 
-في `prisma/schema.prisma`:
+قبل الإطلاق التجاري الفعلي، يجب إنجاز الأمور التالية بشكل منفصل:
 
-```prisma
-datasource db {
-  provider = "postgresql"  // بدلًا من sqlite
-  url      = env("DATABASE_URL")
-}
+### قانوني / تنظيمي (الأهم)
+- [ ] استشارة محامٍ سعودي مختص في العقار/الفنتك
+- [ ] رخصة **الوساطة العقارية** من الهيئة العامة للعقار
+- [ ] تحديد المسار التنظيمي للبيع الجزئي: **CMA** أو **SPV** أو **صندوق عقاري**
+- [ ] اتفاقيات موثّقة مع Alarrab و Azoom
+- [ ] تسجيل نظام حماية البيانات لدى **SDAIA**
+- [ ] الفوترة الإلكترونية عبر **ZATCA (فاتورة)**
+- [ ] سياسة AML/KYC معتمدة والانضمام إلى **SAFIU**
+
+### تشغيلي
+- [ ] حساب تاجر **Moyasar** فعّال (يتطلب سجل تجاري)
+- [ ] تسجيل رسمي في برنامج **نفاذ** والحصول على API keys
+- [ ] حساب **Resend** بنطاق موثّق (SPF/DKIM/DMARC)
+- [ ] حساب **Twilio** (أو مزود SMS محلي — Unifonic / Cequens)
+- [ ] استضافة إنتاجية (Vercel / AWS / STC Cloud)
+- [ ] قاعدة بيانات Postgres مُدارة مع Backups يومية
+- [ ] S3 bucket (AWS me-south-1 / Cloudflare R2 / MinIO)
+- [ ] نطاق `aqarmudar.sa` + شهادة SSL
+- [ ] Sentry account
+- [ ] Google Analytics / Search Console
+
+### أمني
+- [ ] مراجعة أمنية معتمدة (Penetration Test) من شركة سعودية مرخّصة
+- [ ] استعراض الكود (Code Audit)
+- [ ] خطة الاستجابة للحوادث (Incident Response Plan)
+
+---
+
+## Environment Variables
+
+راجع `.env.example` — كل متغير موثّق. المتغيرات الحرجة للإنتاج:
+
+```
+NODE_ENV=production
+DATABASE_URL=postgresql://...
+NEXTAUTH_URL=https://aqarmudar.sa
+NEXTAUTH_SECRET=<openssl rand -base64 32>
+STORAGE_DRIVER=s3
+S3_BUCKET=aqarmudar-uploads
+EMAIL_DRIVER=resend
+RESEND_API_KEY=re_...
+SMS_DRIVER=twilio
+MOYASAR_SECRET_KEY=sk_live_...
+MOYASAR_WEBHOOK_SECRET=whsec_...
+NAFATH_API_URL=https://...
+NAFATH_CLIENT_ID=...
+NAFATH_CLIENT_SECRET=...
+SENTRY_DSN=https://...
+NEXT_PUBLIC_GA_ID=G-...
 ```
 
-ثم في `.env`:
+---
 
-```
-DATABASE_URL="postgresql://user:pass@host:5432/aqarmudar"
-```
+## الاختبارات
 
 ```bash
-npx prisma db push
-npm run db:seed
+npm run typecheck        # فحص TypeScript
+npm test                 # Vitest unit tests
+npm run test:e2e:install # تثبيت Playwright browsers
+npm run test:e2e         # E2E tests
 ```
 
----
-
-## خارطة الطريق التالية
-
-- [x] رفع الصور محليًا (استبدال بـ S3/Cloudinary للإنتاج)
-- [x] دعم اللغة الإنجليزية مع تبديل RTL
-- [x] خرائط تفاعلية (Leaflet + OSM)
-- [x] لوحة الأدمن لاعتماد التقارير الهندسية
-- [x] بوابة دفع Stripe للبيع الجزئي
-- [ ] استبدال التخزين المحلي للصور بـ S3/Cloudinary للإنتاج
-- [ ] Stripe Elements في الواجهة لإكمال الدفع بصريًا
-- [ ] Audit Log وصلاحيات متقدمة
-- [ ] ربط مع ERP وأنظمة إدارة المشاريع
-- [ ] تطبيق جوال (React Native / Flutter)
-
-## بوابة الدفع (Stripe)
-
-بوابة الدفع اختيارية. لتفعيلها:
-
-1. أنشئ حسابًا على [stripe.com](https://stripe.com) واحصل على مفاتيح الاختبار.
-2. أضف إلى `.env`:
-   ```
-   STRIPE_SECRET_KEY="sk_test_..."
-   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
-   STRIPE_WEBHOOK_SECRET="whsec_..."
-   ```
-3. Webhook endpoint: `POST /api/payments/webhook` (استقبل `payment_intent.succeeded`).
-
-عند الضغط على "استثمر" في عقار للبيع الجزئي، يتم إنشاء `Investment` بحالة `PENDING`
-و`PaymentIntent` عبر Stripe. عند نجاح الدفع (webhook) تُحدَّث الحالة إلى `PAID` وتُخصم
-الحصص من العقار تلقائيًا.
-
-## الخرائط
-
-استخدمنا Leaflet مع OpenStreetMap بدون مفاتيح API. الـ CSS يُحمَّل من CDN عند الحاجة
-فقط (dynamic import). في صفحة إضافة العقار، الخريطة تعمل كـ picker (اضغط على الخريطة
-لتحديد الموقع)، وفي صفحة التفاصيل تعرض marker.
-
-## اللغات
-
-نستخدم نظام dictionary بسيط في `lib/i18n.ts` مع cookie اسمه `locale`. زر التبديل في
-الرأس (`LocaleSwitcher`) يُغيّر الكوكي عبر `POST /api/locale` ثم يعمل refresh — الـ
-layout يقرأ الكوكي server-side ويضبط `dir` و `lang` على `<html>` تلقائيًا.
+CI يشغّل كل ما سبق + بناء Docker على كل push/PR.
 
 ---
 
-## الشركاء
+## المدفوعات
+
+**Moyasar (مُوصى به للسعودية):**
+- سجّل حسابك على [moyasar.com](https://moyasar.com)
+- أضف `MOYASAR_SECRET_KEY` و `MOYASAR_PUBLISHABLE_KEY` و `MOYASAR_WEBHOOK_SECRET`
+- Webhook: `POST /api/payments/moyasar/webhook` — أضف `x-moyasar-webhook-secret` header
+- يدعم Mada، Apple Pay، STC Pay، Visa/Mastercard
+
+**Stripe (احتياطي دولي):**
+- Webhook: `POST /api/payments/webhook` — يتحقق من التوقيع
+
+---
+
+## الشراكة
 
 - **Alarrab Engineering & Partner** — الاعتماد الهندسي
 - **Azoom United Contracting** — دراسات التطوير والترميم

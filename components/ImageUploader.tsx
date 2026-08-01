@@ -24,7 +24,7 @@ export function ImageUploader({ value, onChange, max = 10 }: Props) {
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       if (res.ok) {
         const data = await res.json();
-        uploaded.push(data.url);
+        uploaded.push(data.url as string);
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error ?? "فشل رفع الملف");

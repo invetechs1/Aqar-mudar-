@@ -41,9 +41,14 @@ export default async function DashboardPage() {
             مرحبًا {session.user.name} — دورك: {session.user.role}
           </p>
         </div>
-        <Link href="/properties/new" className="btn-primary">
-          + إضافة عقار
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/dashboard/verify" className="btn-secondary">
+            التحقق من الحساب
+          </Link>
+          <Link href="/properties/new" className="btn-primary">
+            + إضافة عقار
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

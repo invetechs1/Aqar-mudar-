@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { randomUUID } from "crypto";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { authOptions } from "@/lib/auth";
+import { uploadImage } from "@/lib/storage";
+import { rateLimit, clientKey } from "@/lib/rateLimit";
+import { audit } from "@/lib/audit";
 
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
-const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const MAX_BYTES = 15 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -14,27 +13,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
   }
 
+  const rl = await rateLimit(clientKey(req, `upload:${session.user.id}`), 30, 300);
+  if (!rl.allowed) return NextResponse.json({ error: "محاولات كثيرة" }, { status: 429 });
+
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "لا يوجد ملف" }, { status: 400 });
   }
-  if (!ALLOWED.has(file.type)) {
-    return NextResponse.json({ error: "نوع الملف غير مدعوم" }, { status: 400 });
-  }
   if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "حجم الملف كبير جدًا (الحد 5MB)" }, { status: 400 });
+    return NextResponse.json({ error: "حجم الملف كبير جدًا" }, { status: 400 });
   }
 
-  const ext = file.type.split("/")[1].replace("jpeg", "jpg");
-  const id = randomUUID();
-  const filename = `${id}.${ext}`;
-  const dir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(dir, { recursive: true });
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(dir, filename), buffer);
-
-  return NextResponse.json({ url: `/uploads/${filename}` }, { status: 201 });
+  try {
+    const result = await uploadImage(file);
+    await audit({
+      action: "upload.image",
+      resource: "media",
+      userId: session.user.id,
+      metadata: { url: result.url, bytes: file.size, type: file.type },
+      request: req,
+    });
+    return NextResponse.json(result, { status: 201 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message ?? "فشل الرفع" }, { status: 400 });
+  }
 }
 
 export const runtime = "nodejs";

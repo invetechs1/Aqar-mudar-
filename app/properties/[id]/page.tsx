@@ -11,8 +11,33 @@ import {
 import Link from "next/link";
 import { InquiryForm } from "@/components/InquiryForm";
 import { PropertyMap } from "@/components/PropertyMap";
+import { JsonLd } from "@/components/JsonLd";
+import { env } from "@/lib/env";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const property = await prisma.property.findUnique({
+    where: { id: params.id },
+    select: { title: true, description: true, city: true, images: true },
+  });
+  if (!property) return { title: "غير موجود" };
+  const imgs = Array.isArray(property.images) ? (property.images as string[]) : [];
+  return {
+    title: property.title,
+    description: property.description.slice(0, 160),
+    openGraph: {
+      title: property.title,
+      description: property.description.slice(0, 160),
+      images: imgs.length ? [imgs[0]] : undefined,
+    },
+  };
+}
 
 export default async function PropertyDetailPage({
   params,
@@ -36,8 +61,43 @@ export default async function PropertyDetailPage({
 
   const r = property.report;
 
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    name: property.title,
+    description: property.description,
+    url: `${env.NEXTAUTH_URL}/properties/${property.id}`,
+    image: images,
+    offers: {
+      "@type": "Offer",
+      price: property.price,
+      priceCurrency: "SAR",
+      availability: "https://schema.org/InStock",
+    },
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: property.city,
+      addressRegion: property.district ?? undefined,
+      addressCountry: "SA",
+    },
+    ...(property.latitude != null && property.longitude != null && {
+      geo: {
+        "@type": "GeoCoordinates",
+        latitude: property.latitude,
+        longitude: property.longitude,
+      },
+    }),
+    floorSize: {
+      "@type": "QuantitativeValue",
+      value: property.area,
+      unitCode: "MTK",
+    },
+    ...(property.bedrooms != null && { numberOfRooms: property.bedrooms }),
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <JsonLd data={productSchema} />
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           {/* Gallery */}

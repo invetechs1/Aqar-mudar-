@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Dictionary } from "@/lib/i18n";
 
 export function Footer({ dict }: { dict: Dictionary }) {
@@ -17,9 +18,10 @@ export function Footer({ dict }: { dict: Dictionary }) {
         <div>
           <div className="font-semibold mb-2">{f.platform}</div>
           <ul className="space-y-1 text-slate-600">
-            {f.links.map((it) => (
-              <li key={it}>{it}</li>
-            ))}
+            <li><Link href="/properties" className="hover:text-brand-700">العقارات المتاحة</Link></li>
+            <li><Link href="/about" className="hover:text-brand-700">عن المنصة</Link></li>
+            <li><Link href="/faq" className="hover:text-brand-700">الأسئلة الشائعة</Link></li>
+            <li><Link href="/contact" className="hover:text-brand-700">اتصل بنا</Link></li>
           </ul>
         </div>
         <div>
@@ -36,6 +38,13 @@ export function Footer({ dict }: { dict: Dictionary }) {
           <ul className="space-y-1 text-slate-600">
             <li>Riyadh, KSA</li>
             <li>info@aqarmudar.sa</li>
+          </ul>
+          <div className="font-semibold mt-4 mb-2">قانوني</div>
+          <ul className="space-y-1 text-slate-600 text-xs">
+            <li><Link href="/legal/terms" className="hover:text-brand-700">الشروط والأحكام</Link></li>
+            <li><Link href="/legal/privacy" className="hover:text-brand-700">سياسة الخصوصية</Link></li>
+            <li><Link href="/legal/aml" className="hover:text-brand-700">AML/KYC</Link></li>
+            <li><Link href="/legal/disclaimer" className="hover:text-brand-700">إخلاء المسؤولية</Link></li>
           </ul>
         </div>
       </div>
