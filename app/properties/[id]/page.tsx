@@ -29,13 +29,9 @@ export default async function PropertyDetailPage({
 
   if (!property) notFound();
 
-  const images: string[] = (() => {
-    try {
-      return JSON.parse(property.images);
-    } catch {
-      return [];
-    }
-  })();
+  const images: string[] = Array.isArray(property.images)
+    ? (property.images as string[])
+    : [];
   const cover = images[0] ?? "https://picsum.photos/seed/aqar/1200/800";
 
   const r = property.report;

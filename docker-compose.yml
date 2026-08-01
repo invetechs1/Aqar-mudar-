@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aqarmudar
+      POSTGRES_PASSWORD: aqarmudar
+      POSTGRES_DB: aqarmudar
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aqarmudar -d aqarmudar"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://aqarmudar:aqarmudar@db:5432/aqarmudar
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-please-generate-with-openssl-rand-base64-32}
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads:/app/public/uploads
+
+volumes:
+  db_data:
+  uploads:

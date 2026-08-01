@@ -3,106 +3,263 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  phone        String?
-  role         String   @default("OWNER") // OWNER | INVESTOR | ADMIN
-  createdAt    DateTime @default(now())
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String
+  name           String
+  phone          String?   @unique
+  role           Role      @default(OWNER)
+  emailVerified  DateTime?
+  phoneVerified  DateTime?
+  nafathVerified DateTime?
+  nationalId     String?
+  totpSecret     String?
+  totpEnabled    Boolean   @default(false)
+  disabled       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  properties  Property[]
-  inquiries   Inquiry[]     @relation("InquiryFromUser")
-  investments Investment[]
+  properties    Property[]
+  inquiries     Inquiry[]     @relation("InquiryFromUser")
+  investments   Investment[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  tokens        VerificationToken[]
+
+  @@index([role])
+  @@index([disabled])
+}
+
+enum Role {
+  OWNER
+  INVESTOR
+  ADMIN
+  ENGINEER
 }
 
 model Property {
-  id              String   @id @default(cuid())
-  title           String
-  description     String
-  city            String
-  district        String?
-  address         String?
-  latitude        Float?
-  longitude       Float?
-  propertyType    String   // APARTMENT | VILLA | LAND | COMMERCIAL | BUILDING
-  listingType     String   // SALE | PARTIAL_SALE | INVESTMENT
-  price           Float
-  area            Float
-  bedrooms        Int?
-  bathrooms       Int?
-  yearBuilt       Int?
-  images          String   @default("[]") // JSON array of URLs
-  status          String   @default("PENDING_REVIEW") // PENDING_REVIEW | CERTIFIED | REJECTED | SOLD
-  isCertified     Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id           String       @id @default(cuid())
+  title        String
+  description  String
+  city         String
+  district     String?
+  address      String?
+  latitude     Float?
+  longitude    Float?
+  propertyType PropertyType
+  listingType  ListingType
+  price        Float
+  area         Float
+  bedrooms     Int?
+  bathrooms    Int?
+  yearBuilt    Int?
+  images       Json         @default("[]")
+  status       PropertyStatus @default(PENDING_REVIEW)
+  isCertified  Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   ownerId String
-  owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   report      EngineeringReport?
   inquiries   Inquiry[]
   investments Investment[]
 
-  // Partial-sale config (used when listingType = PARTIAL_SALE)
-  totalShares       Int?     // total shares available
-  sharePriceSAR     Float?   // price per share
-  soldShares        Int      @default(0)
+  totalShares   Int?
+  sharePriceSAR Float?
+  soldShares    Int   @default(0)
+
+  @@index([status, isCertified])
+  @@index([city])
+  @@index([propertyType])
+  @@index([listingType])
+  @@index([ownerId])
+}
+
+enum PropertyType {
+  APARTMENT
+  VILLA
+  LAND
+  COMMERCIAL
+  BUILDING
+}
+
+enum ListingType {
+  SALE
+  PARTIAL_SALE
+  INVESTMENT
+}
+
+enum PropertyStatus {
+  PENDING_REVIEW
+  CERTIFIED
+  REJECTED
+  SOLD
+  ARCHIVED
 }
 
 model EngineeringReport {
-  id                    String   @id @default(cuid())
-  structuralCondition   String   // EXCELLENT | GOOD | FAIR | POOR
-  finishingQuality      String
-  electricalCondition   String
-  mechanicalCondition   String
-  riskLevel             String   // LOW | MEDIUM | HIGH
-  estimatedLifespan     Int      // years
-  valueUpliftPotential  Float?   // percentage
-  upliftScope           String?
-  upliftCost            Float?
-  upliftDurationMonths  Int?
-  expectedReturnPct     Float?
-  recommendations       String
-  certifiedBy           String   @default("Alarrab Engineering & Partner")
-  issuedAt              DateTime @default(now())
+  id                   String    @id @default(cuid())
+  structuralCondition  Condition
+  finishingQuality     Condition
+  electricalCondition  Condition
+  mechanicalCondition  Condition
+  riskLevel            Risk
+  estimatedLifespan    Int
+  valueUpliftPotential Float?
+  upliftScope          String?
+  upliftCost           Float?
+  upliftDurationMonths Int?
+  expectedReturnPct    Float?
+  recommendations      String
+  certifiedBy          String    @default("Alarrab Engineering & Partner")
+  issuedAt             DateTime  @default(now())
 
   propertyId String   @unique
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
+enum Condition {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+}
+
+enum Risk {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model Inquiry {
-  id         String   @id @default(cuid())
-  message    String
-  contact    String
-  status     String   @default("NEW") // NEW | CONTACTED | CLOSED
-  createdAt  DateTime @default(now())
+  id        String        @id @default(cuid())
+  message   String
+  contact   String
+  status    InquiryStatus @default(NEW)
+  createdAt DateTime      @default(now())
 
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   fromUserId String?
-  fromUser   User?    @relation("InquiryFromUser", fields: [fromUserId], references: [id], onDelete: SetNull)
+  fromUser   User?   @relation("InquiryFromUser", fields: [fromUserId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId])
+  @@index([status])
+}
+
+enum InquiryStatus {
+  NEW
+  CONTACTED
+  CLOSED
 }
 
 model Investment {
-  id                    String   @id @default(cuid())
-  shares                Int
-  amountSAR             Float
-  status                String   @default("PENDING") // PENDING | PAID | FAILED | REFUNDED
-  stripePaymentIntentId String?  @unique
-  createdAt             DateTime @default(now())
-  paidAt                DateTime?
+  id            String           @id @default(cuid())
+  shares        Int
+  amountSAR     Float
+  status        InvestmentStatus @default(PENDING)
+  provider      PaymentProvider  @default(MOYASAR)
+  providerRef   String?          @unique
+  receiptUrl    String?
+  createdAt     DateTime         @default(now())
+  paidAt        DateTime?
+  refundedAt    DateTime?
 
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([propertyId])
+  @@index([status])
+}
+
+enum InvestmentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELED
+}
+
+enum PaymentProvider {
+  MOYASAR
+  STRIPE
+}
+
+model VerificationToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  type      TokenType
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  identifier String?
+
+  @@index([token])
+  @@index([userId])
+}
+
+enum TokenType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+  PHONE_OTP
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  kind      String
+  title     String
+  body      String
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  resource  String
+  resourceId String?
+  metadata  Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+}
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  count     Int      @default(0)
+  windowEnd DateTime
+  createdAt DateTime @default(now())
+
+  @@index([windowEnd])
 }

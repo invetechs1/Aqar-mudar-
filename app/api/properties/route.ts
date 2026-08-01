@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   const property = await prisma.property.create({
     data: {
       ...rest,
-      images: JSON.stringify(images),
+      images: images as unknown as any,
       ownerId: session.user.id,
     },
   });

@@ -13,7 +13,7 @@ type Props = {
     propertyType: string;
     listingType: string;
     isCertified: boolean;
-    images: string;
+    images: unknown;
   };
 };
 
@@ -32,13 +32,9 @@ const LISTING_AR: Record<string, string> = {
 };
 
 export function PropertyCard({ property }: Props) {
-  const images: string[] = (() => {
-    try {
-      return JSON.parse(property.images);
-    } catch {
-      return [];
-    }
-  })();
+  const images: string[] = Array.isArray(property.images)
+    ? (property.images as string[])
+    : [];
   const cover = images[0] ?? "https://picsum.photos/seed/aqar/800/600";
 
   return (

@@ -1,19 +1,20 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { verifyPassword } from "@/lib/password";
+import { verifyTotp } from "@/lib/totp";
 
 export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/auth/signin",
-  },
+  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
+  useSecureCookies: process.env.NODE_ENV === "production",
+  pages: { signIn: "/auth/signin" },
   providers: [
     CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        totp: { label: "2FA Code", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
@@ -21,10 +22,19 @@ export const authOptions: NextAuthOptions = {
         const user = await prisma.user.findUnique({
           where: { email: credentials.email.toLowerCase() },
         });
-        if (!user) return null;
+        if (!user || user.disabled) return null;
 
-        const valid = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!valid) return null;
+        const ok = await verifyPassword(credentials.password, user.passwordHash);
+        if (!ok) return null;
+
+        if (user.totpEnabled) {
+          if (!credentials.totp) {
+            throw new Error("TOTP_REQUIRED");
+          }
+          if (!user.totpSecret || !verifyTotp(user.totpSecret, credentials.totp)) {
+            throw new Error("TOTP_INVALID");
+          }
+        }
 
         return {
           id: user.id,

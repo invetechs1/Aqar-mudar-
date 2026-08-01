@@ -13,15 +13,17 @@ export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
   const raw = await req.text();
 
-  let event;
+  let event: any;
   if (secret && sig) {
     try {
       event = stripe.webhooks.constructEvent(raw, sig, secret);
     } catch (err: any) {
-      return NextResponse.json({ error: `Webhook signature failed: ${err.message}` }, { status: 400 });
+      return NextResponse.json(
+        { error: `Webhook signature failed: ${err.message}` },
+        { status: 400 }
+      );
     }
   } else {
-    // Dev fallback (no signature verification) — DO NOT use in production
     try {
       event = JSON.parse(raw);
     } catch {
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
     if (investmentId) {
       const inv = await prisma.investment.update({
         where: { id: investmentId },
-        data: { status: "PAID", paidAt: new Date() },
+        data: { status: "PAID", paidAt: new Date(), providerRef: intent.id },
       });
       await prisma.property.update({
         where: { id: inv.propertyId },
