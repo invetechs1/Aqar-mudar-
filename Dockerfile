@@ -11,6 +11,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Placeholder values so build-time env validation (lib/env.ts) and static page
+# collection succeed. Real values are supplied at container runtime and are
+# never baked into the client bundle since none of these are NEXT_PUBLIC_*.
+ARG DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+ARG NEXTAUTH_URL="http://localhost:3000"
+ARG NEXTAUTH_SECRET="build-time-placeholder-not-used-at-runtime"
 RUN npx prisma generate
 RUN npm run build
 

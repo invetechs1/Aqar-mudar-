@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
 
   await prisma.investment.update({
     where: { id: investment.id },
-    data: { stripePaymentIntentId: intent.id },
+    data: { providerRef: intent.id },
   });
 
   return NextResponse.json({
