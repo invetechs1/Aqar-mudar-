@@ -15,6 +15,9 @@ out
 *.db-journal
 prisma/dev.db*
 
+# build artifacts
+dist
+
 # misc
 .DS_Store
 *.log
