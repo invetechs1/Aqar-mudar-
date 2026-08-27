@@ -7,6 +7,8 @@ import { createPayment, isMoyasarConfigured } from "@/lib/moyasar";
 import { env } from "@/lib/env";
 import { audit } from "@/lib/audit";
 import { rateLimit, clientKey } from "@/lib/rateLimit";
+import { hasCompleteConsent } from "@/lib/consent";
+import { features } from "@/lib/features";
 
 const schema = z.object({
   propertyId: z.string().min(1),
@@ -32,6 +34,14 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "بيانات غير صحيحة" }, { status: 400 });
 
   const { propertyId, shares } = parsed.data;
+
+  if (!features.partialSale) {
+    return NextResponse.json(
+      { error: "البيع الجزئي غير متاح حاليًا — قيد الترخيص النظامي." },
+      { status: 400 }
+    );
+  }
+
   const property = await prisma.property.findUnique({ where: { id: propertyId } });
   if (!property) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
   if (
@@ -40,6 +50,23 @@ export async function POST(req: NextRequest) {
     !property.sharePriceSAR
   ) {
     return NextResponse.json({ error: "غير متاح للبيع الجزئي" }, { status: 400 });
+  }
+
+  // Server-side gate — client validation is not enough. The investor must have
+  // a complete, current-version acknowledgement recorded for this property.
+  const consented = await hasCompleteConsent({
+    userId: session.user.id,
+    scope: "INVEST_ACK",
+    scopeRefId: propertyId,
+  });
+  if (!consented) {
+    return NextResponse.json(
+      {
+        error: "يجب استكمال إقرار المستثمر قبل الدفع.",
+        redirect: `/invest/${propertyId}/acknowledge`,
+      },
+      { status: 412 }
+    );
   }
   const remaining = property.totalShares - property.soldShares;
   if (shares > remaining) {

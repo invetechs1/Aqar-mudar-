@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { audit } from "@/lib/audit";
+import { recordConsentBatch } from "@/lib/consent";
+import { features } from "@/lib/features";
+
+const listingEnum = z.enum(["SALE", "PARTIAL_SALE", "INVESTMENT"]);
 
 const createSchema = z.object({
   title: z.string().min(4).max(120),
@@ -11,7 +16,7 @@ const createSchema = z.object({
   district: z.string().max(80).optional(),
   address: z.string().max(200).optional(),
   propertyType: z.enum(["APARTMENT", "VILLA", "LAND", "COMMERCIAL", "BUILDING"]),
-  listingType: z.enum(["SALE", "PARTIAL_SALE", "INVESTMENT"]),
+  listingType: listingEnum,
   price: z.number().positive(),
   area: z.number().positive(),
   bedrooms: z.number().int().nonnegative().optional(),
@@ -22,6 +27,10 @@ const createSchema = z.object({
   totalShares: z.number().int().positive().optional(),
   sharePriceSAR: z.number().positive().optional(),
   images: z.array(z.string().min(1)).max(10).default([]),
+  attestation: z.object({
+    ownerOrAgent: z.literal(true),
+    dataAccuracy: z.literal(true),
+  }),
 });
 
 export async function GET(req: NextRequest) {
@@ -34,8 +43,8 @@ export async function GET(req: NextRequest) {
   const properties = await prisma.property.findMany({
     where: {
       ...(city && { city }),
-      ...(type && { propertyType: type }),
-      ...(listing && { listingType: listing }),
+      ...(type && { propertyType: type as any }),
+      ...(listing && { listingType: listing as any }),
       ...(certifiedOnly && { isCertified: true }),
     },
     include: {
@@ -63,13 +72,42 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { images, ...rest } = parsed.data;
+  // Enforce the fractional-sale feature flag server-side.
+  if (parsed.data.listingType === "PARTIAL_SALE" && !features.partialSale) {
+    return NextResponse.json(
+      { error: "البيع الجزئي غير متاح حاليًا — قيد الترخيص النظامي." },
+      { status: 400 }
+    );
+  }
+
+  const { images, attestation, ...rest } = parsed.data;
   const property = await prisma.property.create({
     data: {
       ...rest,
       images: images as unknown as any,
       ownerId: session.user.id,
     },
+  });
+
+  // Record each attestation clause independently.
+  await recordConsentBatch({
+    userId: session.user.id,
+    scope: "PROPERTY_ATTESTATION",
+    scopeRefId: property.id,
+    clauses: [
+      { key: "owner_or_agent" },
+      { key: "data_accuracy" },
+    ],
+    request: req,
+  });
+
+  await audit({
+    action: "property.create",
+    resource: "property",
+    resourceId: property.id,
+    userId: session.user.id,
+    metadata: { attestation },
+    request: req,
   });
 
   return NextResponse.json({ property }, { status: 201 });

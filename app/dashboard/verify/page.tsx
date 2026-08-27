@@ -6,6 +6,7 @@ import { VerifyPanel } from "@/components/VerifyPanel";
 import { isNafathConfigured } from "@/lib/nafath";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "التحقق من الحساب" };
 
 export default async function VerifyPage() {
   const session = await getServerSession(authOptions);
@@ -14,31 +15,32 @@ export default async function VerifyPage() {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
-      email: true,
-      phone: true,
-      emailVerified: true,
-      phoneVerified: true,
-      nafathVerified: true,
+      email: true, phone: true,
+      emailVerified: true, phoneVerified: true, nafathVerified: true,
       totpEnabled: true,
     },
   });
   if (!user) redirect("/dashboard");
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
-      <h1 className="text-3xl font-bold mb-2">التحقق من الحساب</h1>
-      <p className="text-slate-600 mb-8">
-        كلما اكتمل تحققك، ازدادت الصلاحيات المتاحة (خاصةً للاستثمار).
+    <div className="mx-auto page-x" style={{ maxWidth: 860, padding: "40px 32px 80px" }}>
+      <h1 className="font-extrabold" style={{ fontSize: 32, letterSpacing: "-0.01em" }}>
+        التحقق من الحساب
+      </h1>
+      <p className="mt-2 text-muted-2 font-light" style={{ fontSize: 15, lineHeight: 1.85 }}>
+        كلما اكتمل تحققك، ازدادت الصلاحيات المتاحة — خاصةً للاستثمار في العقارات.
       </p>
-      <VerifyPanel
-        email={user.email}
-        phone={user.phone}
-        emailVerified={!!user.emailVerified}
-        phoneVerified={!!user.phoneVerified}
-        nafathVerified={!!user.nafathVerified}
-        totpEnabled={user.totpEnabled}
-        nafathReady={isNafathConfigured()}
-      />
+      <div className="mt-8">
+        <VerifyPanel
+          email={user.email}
+          phone={user.phone}
+          emailVerified={!!user.emailVerified}
+          phoneVerified={!!user.phoneVerified}
+          nafathVerified={!!user.nafathVerified}
+          totpEnabled={user.totpEnabled}
+          nafathReady={isNafathConfigured()}
+        />
+      </div>
     </div>
   );
 }

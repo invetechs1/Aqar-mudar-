@@ -3,59 +3,147 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    -webkit-text-size-adjust: 100%;
-  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
-    font-family: "Tajawal", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    @apply bg-surface-alt text-ink antialiased;
+    font-family: "Cairo", "SF Arabic", "Segoe UI", "Noto Sans Arabic", system-ui, sans-serif;
+    font-weight: 400;
   }
   html[lang="en"] body {
-    font-family: "Inter", "Tajawal", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: "Cairo", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   }
-  h1, h2, h3, h4 {
-    @apply text-slate-900;
-  }
+  h1, h2, h3, h4 { @apply text-ink font-bold; text-wrap: balance; }
+  ::selection { background: #c9a24a; color: #fff; }
 }
 
 @layer components {
+  /* Buttons — token-driven */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition;
+    white-space: nowrap;
   }
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700 shadow-sm;
+    @apply btn bg-green-700 text-white;
   }
+  .btn-primary:hover { background: #16302a; }
+  .btn-dark {
+    @apply btn bg-green-900 text-white;
+  }
+  .btn-dark:hover { background: #0f231e; }
+  .btn-gold {
+    @apply btn text-green-900;
+    background: #c9a24a;
+  }
+  .btn-gold:hover { background: #e0bb63; }
   .btn-secondary {
-    @apply btn bg-white text-brand-700 border border-brand-200 hover:bg-brand-50;
+    @apply btn bg-white text-ink;
+    border: 1px solid #e6eae8;
   }
+  .btn-secondary:hover { background: #f5f8f6; }
   .btn-ghost {
-    @apply btn text-slate-700 hover:bg-slate-100;
+    @apply btn text-ink;
   }
+  .btn-ghost:hover { background: #f5f8f6; }
+  .btn-outline-light {
+    @apply btn text-white;
+    border: 1px solid rgba(255,255,255,.22);
+    background: transparent;
+  }
+  .btn-outline-light:hover { background: rgba(255,255,255,.08); }
+
+  /* Form controls */
   .input {
-    @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200;
+    @apply block w-full rounded-xl bg-white text-ink;
+    border: 1px solid #dfe7e3;
+    padding: 14px 16px;
+    font-size: 15px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .input:focus {
+    outline: none;
+    border-color: #2f6a53;
+    box-shadow: 0 0 0 3px rgba(47,106,83,.15);
   }
   .label {
-    @apply mb-1 block text-sm font-medium text-slate-700;
+    @apply mb-2 block text-xs font-semibold uppercase tracking-wider text-muted;
   }
+
+  /* Cards / surfaces */
   .card {
-    @apply rounded-xl bg-white border border-slate-200 shadow-sm;
+    @apply bg-surface;
+    border: 1px solid #e6eae8;
+    border-radius: 22px;
+    box-shadow: 0 4px 18px rgba(22,48,42,.06);
   }
-  .badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  .card-soft {
+    @apply bg-surface-alt;
+    border-radius: 20px;
   }
-  .badge-certified {
-    @apply badge bg-brand-100 text-brand-800 border border-brand-200;
+  .panel-dark {
+    background: #16302a;
+    color: #ffffff;
+    border-radius: 28px;
   }
-  .badge-pending {
-    @apply badge bg-amber-100 text-amber-800 border border-amber-200;
+
+  /* Chips / pills */
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full font-medium;
+    padding: 4px 12px;
+    font-size: 12px;
   }
-  .badge-risk-low {
-    @apply badge bg-emerald-100 text-emerald-800;
+  .chip-certified {
+    @apply chip;
+    background: #16302a;
+    color: #e6c982;
   }
-  .badge-risk-medium {
-    @apply badge bg-amber-100 text-amber-800;
+  .chip-listing {
+    @apply chip;
+    background: rgba(255,255,255,.95);
+    color: #5b6863;
   }
-  .badge-risk-high {
-    @apply badge bg-rose-100 text-rose-800;
+  .chip-ok    { @apply chip; background: #eaf3ee; color: #2f6a53; }
+  .chip-warn  { @apply chip; background: #fdf6e6; color: #b28a35; }
+  .chip-err   { @apply chip; background: #fdecec; color: #b3261e; }
+  .chip-muted { @apply chip; background: #f5f8f6; color: #5b6863; }
+  .chip-gold  { @apply chip; background: #c9a24a; color: #16302a; }
+
+  /* Nav pills used in the dark header */
+  .nav-pill {
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 14px;
+    color: rgba(255,255,255,.85);
+    white-space: nowrap;
+    transition: background .15s;
   }
+  .nav-pill:hover { background: rgba(255,255,255,.08); }
+  .nav-pill.active { background: rgba(255,255,255,.10); color: #fff; }
+
+  /* Legal / risk block */
+  .legal-block {
+    background: #fdf9ef;
+    border: 1px solid #ecdcb4;
+    border-radius: 22px;
+    padding: 26px 28px;
+    color: #6b5a34;
+  }
+  .legal-block h4 {
+    color: #8a6a1f;
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 10px;
+  }
+  .legal-block p {
+    font-size: 14px;
+    line-height: 1.9;
+    margin: 0 0 8px;
+  }
+}
+
+@layer utilities {
+  .tabular { font-variant-numeric: tabular-nums; }
+  .page-x { padding-left: 32px; padding-right: 32px; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
 }

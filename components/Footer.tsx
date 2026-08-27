@@ -1,55 +1,100 @@
 import Link from "next/link";
+import { LogoSignature } from "./Logo";
 import type { Dictionary } from "@/lib/i18n";
+
+const LEGAL_LINKS = [
+  { href: "/legal/terms",      label: "الشروط والأحكام" },
+  { href: "/legal/privacy",    label: "سياسة الخصوصية (PDPL)" },
+  { href: "/legal/disclaimer", label: "إخلاء المسؤولية" },
+  { href: "/legal/risk",       label: "إفصاح المخاطر" },
+  { href: "/legal/aml",        label: "AML / KYC" },
+  { href: "/legal/refund",     label: "سياسة الاسترداد" },
+];
+
+const PLATFORM_LINKS = [
+  { href: "/properties", label: "العقارات المتاحة" },
+  { href: "/#certified", label: "اعتماد العراب" },
+  { href: "/faq",        label: "الأسئلة الشائعة" },
+  { href: "/contact",    label: "اتصل بنا" },
+];
+
+const PARTNERS = [
+  "Alarrab Engineering & Partner",
+  "Azoom United Contracting",
+  "First Ex",
+  "Bassir Technology",
+];
 
 export function Footer({ dict }: { dict: Dictionary }) {
   const f = dict.footer;
   return (
-    <footer className="border-t border-slate-200 bg-white mt-16">
-      <div className="max-w-7xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-4 text-sm">
+    <footer style={{ background: "#f5f8f6" }} className="mt-16 border-t border-line">
+      <div
+        className="mx-auto max-w-page grid gap-10 text-sm"
+        style={{
+          padding: "56px 32px 32px",
+          gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
+        }}
+      >
+        <div className="min-w-0">
+          <LogoSignature on="light" size={40} href={null} />
+          <p className="mt-4 text-muted-2 leading-relaxed" style={{ maxWidth: 320 }}>
+            {f.tag}
+          </p>
+          <p className="mt-4 text-xs text-muted tabular" style={{ lineHeight: 1.9 }}>
+            شركة بصير لتقنية المعلومات
+            <br />
+            الرقم الموحد ٧٠٠٥٧١٠٤٤٢
+          </p>
+        </div>
+
         <div>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-brand-600 grid place-items-center text-white font-black">
-              ع
-            </div>
-            <div className="font-bold">Aqar Mudar</div>
+          <div className="font-bold text-ink mb-3">{f.platform}</div>
+          <ul className="space-y-2 text-muted-2">
+            {PLATFORM_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="hover:text-green-700 transition">
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <div className="font-bold text-ink mb-3">{f.partners}</div>
+          <ul className="space-y-2 text-muted-2">
+            {PARTNERS.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <div className="font-bold text-ink mb-3">قانوني</div>
+          <ul className="space-y-2 text-muted-2">
+            {LEGAL_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="hover:text-green-700 transition">
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="font-bold text-ink mt-6 mb-2">{f.contact}</div>
+          <div className="text-muted-2 text-xs" style={{ lineHeight: 1.9 }}>
+            info@aqarmudar.sa
+            <br />
+            legal@aqarmudar.sa
           </div>
-          <p className="text-slate-600">{f.tag}</p>
-        </div>
-        <div>
-          <div className="font-semibold mb-2">{f.platform}</div>
-          <ul className="space-y-1 text-slate-600">
-            <li><Link href="/properties" className="hover:text-brand-700">العقارات المتاحة</Link></li>
-            <li><Link href="/about" className="hover:text-brand-700">عن المنصة</Link></li>
-            <li><Link href="/faq" className="hover:text-brand-700">الأسئلة الشائعة</Link></li>
-            <li><Link href="/contact" className="hover:text-brand-700">اتصل بنا</Link></li>
-          </ul>
-        </div>
-        <div>
-          <div className="font-semibold mb-2">{f.partners}</div>
-          <ul className="space-y-1 text-slate-600">
-            <li>Alarrab Engineering &amp; Partner</li>
-            <li>Azoom United Contracting</li>
-            <li>First Ex</li>
-            <li>Bassir Technology</li>
-          </ul>
-        </div>
-        <div>
-          <div className="font-semibold mb-2">{f.contact}</div>
-          <ul className="space-y-1 text-slate-600">
-            <li>Riyadh, KSA</li>
-            <li>info@aqarmudar.sa</li>
-          </ul>
-          <div className="font-semibold mt-4 mb-2">قانوني</div>
-          <ul className="space-y-1 text-slate-600 text-xs">
-            <li><Link href="/legal/terms" className="hover:text-brand-700">الشروط والأحكام</Link></li>
-            <li><Link href="/legal/privacy" className="hover:text-brand-700">سياسة الخصوصية</Link></li>
-            <li><Link href="/legal/aml" className="hover:text-brand-700">AML/KYC</Link></li>
-            <li><Link href="/legal/disclaimer" className="hover:text-brand-700">إخلاء المسؤولية</Link></li>
-          </ul>
         </div>
       </div>
-      <div className="border-t border-slate-200 py-4 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} {f.copyright}
+
+      <div
+        className="border-t border-line text-center text-xs text-muted"
+        style={{ padding: "18px 32px" }}
+      >
+        © {new Date().getFullYear()} Aqar Mudar — منتج من First Ex — Powered by Bassir Technology
       </div>
     </footer>
   );

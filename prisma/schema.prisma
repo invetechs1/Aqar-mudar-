@@ -30,6 +30,7 @@ model User {
   notifications Notification[]
   auditLogs     AuditLog[]
   tokens        VerificationToken[]
+  consents      Consent[]
 
   @@index([role])
   @@index([disabled])
@@ -262,4 +263,28 @@ model RateLimit {
   createdAt DateTime @default(now())
 
   @@index([windowEnd])
+}
+
+/// One row PER checked clause.
+/// Consent is a legal event — never store it as an aggregate boolean.
+/// Downstream flows (invest, add-property, signup) must verify a complete,
+/// current-version set of consent rows exists before the action is allowed,
+/// and re-prompt when any document version changes. Rows are immutable.
+model Consent {
+  id              String   @id @default(cuid())
+  clauseKey       String
+  documentSlug    String?
+  documentVersion String?
+  scope           String   // "SIGNUP" | "PROPERTY_ATTESTATION" | "INVEST_ACK"
+  scopeRefId      String?
+  ip              String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, scope])
+  @@index([userId, scope, scopeRefId])
+  @@index([clauseKey])
 }

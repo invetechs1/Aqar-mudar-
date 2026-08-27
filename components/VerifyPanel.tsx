@@ -15,12 +15,7 @@ type Props = {
 export function VerifyPanel(props: Props) {
   return (
     <div className="space-y-4">
-      <Row
-        title="البريد الإلكتروني"
-        subtitle={props.email}
-        verified={props.emailVerified}
-        badge={props.emailVerified ? "مؤكد" : "غير مؤكد"}
-      />
+      <EmailRow email={props.email} verified={props.emailVerified} />
       <PhoneRow phone={props.phone} verified={props.phoneVerified} />
       <NafathRow verified={props.nafathVerified} ready={props.nafathReady} />
       <TotpRow enabled={props.totpEnabled} />
@@ -28,39 +23,94 @@ export function VerifyPanel(props: Props) {
   );
 }
 
-function Row({
+function StepCard({
+  n,
   title,
   subtitle,
-  verified,
-  badge,
+  tone,
+  status,
   children,
+  variant = "light",
 }: {
+  n: number;
   title: string;
-  subtitle?: string | null;
-  verified: boolean;
-  badge: string;
+  subtitle?: string;
+  tone: "ok" | "warn" | "dark" | "neutral";
+  status: string;
   children?: React.ReactNode;
+  variant?: "light" | "dark";
 }) {
+  const bg = variant === "dark" ? "#16302a" : "#ffffff";
+  const color = variant === "dark" ? "#ffffff" : "#16211d";
+  const tileBg =
+    tone === "ok"
+      ? "#eaf3ee"
+      : tone === "warn"
+      ? "#fdf6e6"
+      : tone === "dark"
+      ? "rgba(201,162,74,.18)"
+      : "#f5f8f6";
+  const tileFg =
+    tone === "ok" ? "#2f6a53" : tone === "warn" ? "#b28a35" : tone === "dark" ? "#e6c982" : "#5b6863";
+  const chipClass =
+    tone === "ok" ? "chip-ok" : tone === "warn" ? "chip-warn" : tone === "dark" ? "chip-gold" : "chip-muted";
   return (
-    <div className="card p-5">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <div className="font-bold">{title}</div>
-          {subtitle && <div className="text-sm text-slate-500">{subtitle}</div>}
+    <div
+      className="rounded-2xl"
+      style={{
+        background: bg,
+        color,
+        border: variant === "dark" ? "none" : "1px solid #e6eae8",
+        padding: 22,
+        boxShadow: variant === "dark" ? "none" : "0 4px 18px rgba(22,48,42,.06)",
+      }}
+    >
+      <div className="flex items-start gap-4">
+        <div
+          className="grid place-items-center flex-none font-extrabold"
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 14,
+            background: tileBg,
+            color: tileFg,
+            fontSize: 20,
+          }}
+        >
+          {n}
         </div>
-        <span className={verified ? "badge-certified" : "badge-pending"}>
-          {verified ? "✓ " : ""}
-          {badge}
-        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <div className="font-bold" style={{ fontSize: 16 }}>{title}</div>
+            <span className={chipClass}>{status}</span>
+          </div>
+          {subtitle && (
+            <div className="text-sm mt-1" style={{ color: variant === "dark" ? "#b9cfc4" : "#7d8a85" }}>
+              {subtitle}
+            </div>
+          )}
+        </div>
       </div>
-      {children}
+      {children && <div className="mt-4">{children}</div>}
     </div>
+  );
+}
+
+function EmailRow({ email, verified }: { email: string; verified: boolean }) {
+  return (
+    <StepCard
+      n={1}
+      title="البريد الإلكتروني"
+      subtitle={email}
+      tone="ok"
+      status={verified ? "✓ مكتمل" : "غير مؤكد"}
+    />
   );
 }
 
 function PhoneRow({ phone, verified }: { phone: string | null; verified: boolean }) {
   const [p, setP] = useState(phone ?? "");
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState<string[]>(["", "", "", "", "", ""]);
   const [step, setStep] = useState<"idle" | "sent">("idle");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -80,30 +130,47 @@ function PhoneRow({ phone, verified }: { phone: string | null; verified: boolean
     setBusy(false);
   }
 
-  async function verify(e: React.FormEvent) {
-    e.preventDefault();
+  async function verify() {
     setBusy(true);
     setMsg(null);
+    const joined = code.join("");
     const res = await fetch("/api/auth/phone/verify-otp", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ code: joined }),
     });
     const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      setMsg("تم التحقق. حدّث الصفحة للتحديث.");
-    } else setMsg(data.error ?? "فشل");
+    if (res.ok) setMsg("تم التحقق. حدّث الصفحة.");
+    else setMsg(data.error ?? "فشل");
     setBusy(false);
   }
 
+  function setDigit(i: number, v: string) {
+    const digit = v.replace(/\D/g, "").slice(0, 1);
+    const next = [...code];
+    next[i] = digit;
+    setCode(next);
+    if (digit && i < 5) {
+      const el = document.querySelector<HTMLInputElement>(`input[data-otp="${i + 1}"]`);
+      el?.focus();
+    }
+  }
+
   return (
-    <Row title="رقم الجوال" subtitle={phone ?? "غير مضاف"} verified={verified} badge={verified ? "مؤكد" : "غير مؤكد"}>
+    <StepCard
+      n={2}
+      title="رقم الجوال"
+      subtitle={phone ?? "غير مضاف"}
+      tone={verified ? "ok" : "warn"}
+      status={verified ? "✓ مكتمل" : "قيد التحقق"}
+    >
       {!verified && (
-        <div className="space-y-3">
+        <div>
           {step === "idle" ? (
-            <form onSubmit={send} className="flex gap-2">
+            <form onSubmit={send} className="flex flex-wrap items-center gap-2">
               <input
                 className="input flex-1"
+                style={{ minWidth: 200 }}
                 value={p}
                 onChange={(e) => setP(e.target.value)}
                 placeholder="+9665xxxxxxxx"
@@ -113,23 +180,37 @@ function PhoneRow({ phone, verified }: { phone: string | null; verified: boolean
               </button>
             </form>
           ) : (
-            <form onSubmit={verify} className="flex gap-2">
-              <input
-                className="input flex-1 font-mono tracking-widest text-center"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                maxLength={6}
-                placeholder="000000"
-              />
-              <button className="btn-primary" disabled={busy}>
-                تحقق
+            <div>
+              <div className="flex gap-2 mb-3 flex-wrap">
+                {code.map((d, i) => (
+                  <input
+                    key={i}
+                    data-otp={i}
+                    value={d}
+                    onChange={(e) => setDigit(i, e.target.value)}
+                    className="text-center font-bold tabular"
+                    style={{
+                      width: 52,
+                      height: 58,
+                      borderRadius: 12,
+                      border: "1.5px solid #dfe7e3",
+                      fontSize: 22,
+                      background: "#ffffff",
+                    }}
+                    inputMode="numeric"
+                    maxLength={1}
+                  />
+                ))}
+              </div>
+              <button className="btn-primary" disabled={busy} onClick={verify}>
+                تأكيد
               </button>
-            </form>
+            </div>
           )}
-          {msg && <div className="text-sm text-slate-600">{msg}</div>}
+          {msg && <div className="text-sm text-muted-2 mt-2">{msg}</div>}
         </div>
       )}
-    </Row>
+    </StepCard>
   );
 }
 
@@ -163,53 +244,75 @@ function NafathRow({ verified, ready }: { verified: boolean; ready: boolean }) {
       body: JSON.stringify({ transactionId: tx.transactionId, nationalId: nid }),
     });
     const data = await res.json().catch(() => ({}));
-    if (res.ok && data.verified) {
-      setMsg("تم التحقق عبر نفاذ. حدّث الصفحة.");
-    } else setMsg(data.message ?? data.error ?? "لم يتم التحقق بعد");
+    if (res.ok && data.verified) setMsg("تم التحقق عبر نفاذ. حدّث الصفحة.");
+    else setMsg(data.message ?? data.error ?? "لم يتم التحقق بعد");
     setBusy(false);
   }
 
   return (
-    <Row title="نفاذ — التحقق من الهوية" verified={verified} badge={verified ? "مؤكد" : "غير مؤكد"}>
+    <StepCard
+      n={3}
+      title="نفاذ — التحقق من الهوية"
+      subtitle="مطلوب قبل أي معاملة استثمارية على المنصة."
+      tone="dark"
+      status={verified ? "✓ مكتمل" : "غير مؤكد"}
+      variant="dark"
+    >
       {!verified && (
-        <div className="space-y-3">
+        <div>
           {!ready && (
-            <div className="rounded bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-              نفاذ يعمل في وضع المحاكاة (Mock). لا يتم التحقق الفعلي حتى تُهيّئ
-              <code className="mx-1">NAFATH_API_URL</code> و <code>NAFATH_CLIENT_ID</code>.
+            <div
+              className="text-xs rounded-lg mb-3"
+              style={{
+                background: "rgba(201,162,74,.14)",
+                color: "#e6c982",
+                padding: "10px 12px",
+                border: "1px solid rgba(201,162,74,.24)",
+              }}
+            >
+              نفاذ يعمل في وضع المحاكاة. لا يتم التحقق الفعلي حتى تُهيّئ اعتمادات نفاذ.
             </div>
           )}
           {!tx ? (
-            <form onSubmit={req} className="flex gap-2">
+            <form onSubmit={req} className="flex flex-wrap items-center gap-2">
               <input
-                className="input flex-1 font-mono"
+                className="input flex-1 tabular"
+                style={{
+                  minWidth: 200,
+                  background: "rgba(255,255,255,.06)",
+                  borderColor: "rgba(255,255,255,.16)",
+                  color: "#ffffff",
+                }}
                 value={nid}
                 onChange={(e) => setNid(e.target.value)}
                 pattern="\d{10}"
                 maxLength={10}
                 placeholder="رقم الهوية / الإقامة"
               />
-              <button className="btn-primary" disabled={busy}>
-                طلب تحقق
+              <button className="btn-gold" disabled={busy}>
+                ابدأ التحقق
               </button>
             </form>
           ) : (
-            <div className="rounded bg-brand-50 border border-brand-200 p-4">
-              <div className="text-sm mb-2">
-                افتح تطبيق نفاذ واختر الرقم التالي:
-              </div>
-              <div className="text-4xl font-black text-center text-brand-700 my-3">
+            <div>
+              <p style={{ color: "#b9cfc4", fontSize: 14 }}>
+                افتح تطبيق نفاذ واختر الرقم:
+              </p>
+              <div
+                className="my-3 tabular font-extrabold"
+                style={{ fontSize: 26, color: "#e6c982" }}
+              >
                 {tx.randomNumber}
               </div>
-              <button onClick={check} className="btn-primary w-full" disabled={busy}>
-                تحققت من التطبيق — أكمل
+              <button onClick={check} className="btn-gold" disabled={busy}>
+                تحققتُ من التطبيق
               </button>
             </div>
           )}
-          {msg && <div className="text-sm text-slate-600">{msg}</div>}
+          {msg && <div className="text-sm mt-3" style={{ color: "#b9cfc4" }}>{msg}</div>}
         </div>
       )}
-    </Row>
+    </StepCard>
   );
 }
 
@@ -241,24 +344,33 @@ function TotpRow({ enabled }: { enabled: boolean }) {
   }
 
   return (
-    <Row title="المصادقة الثنائية (2FA)" verified={enabled} badge={enabled ? "مفعّلة" : "غير مفعّلة"}>
+    <StepCard
+      n={4}
+      title="المصادقة الثنائية (2FA)"
+      subtitle="طبقة أمان إضافية لحسابك عبر تطبيق مصادقة."
+      tone="neutral"
+      status={enabled ? "✓ مفعّلة" : "غير مفعّلة"}
+    >
       {!enabled && (
-        <div className="space-y-3">
+        <div>
           {!setup ? (
-            <button onClick={begin} className="btn-primary" disabled={busy}>
-              بدء التفعيل
+            <button onClick={begin} className="btn-secondary" disabled={busy}>
+              تفعيل
             </button>
           ) : (
             <>
-              <div className="text-sm text-slate-600">
+              <div className="text-sm text-muted-2 mb-2">
                 أضف الرمز التالي في تطبيق Google Authenticator / Authy:
               </div>
-              <div className="rounded bg-slate-50 border border-slate-200 p-3 font-mono text-center text-sm break-all">
+              <div
+                className="tabular text-center rounded-lg mb-3"
+                style={{ background: "#f5f8f6", padding: 12, border: "1px solid #e6eae8" }}
+              >
                 {setup.secret}
               </div>
               <form onSubmit={confirm} className="flex gap-2">
                 <input
-                  className="input flex-1 font-mono tracking-widest text-center"
+                  className="input flex-1 tabular text-center tracking-widest"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   maxLength={6}
@@ -270,9 +382,9 @@ function TotpRow({ enabled }: { enabled: boolean }) {
               </form>
             </>
           )}
-          {msg && <div className="text-sm text-slate-600">{msg}</div>}
+          {msg && <div className="text-sm text-muted-2 mt-2">{msg}</div>}
         </div>
       )}
-    </Row>
+    </StepCard>
   );
 }

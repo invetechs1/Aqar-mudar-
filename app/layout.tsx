@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   authors: [{ name: "First Ex" }],
   keywords: [
     "عقار", "استثمار عقاري", "السعودية", "الرياض", "تقرير هندسي",
-    "Alarrab Certified", "عقار مدر", "بيع جزئي", "real estate",
+    "Alarrab Certified", "عقار مدر", "real estate",
   ],
   openGraph: {
     type: "website",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#265444",
+  themeColor: "#16302a",
   width: "device-width",
   initialScale: 1,
 };
@@ -78,8 +78,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang={locale} dir={dict.dir}>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Inter:wght@400;500;700;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap"
           rel="stylesheet"
         />
         <JsonLd data={organizationSchema} />

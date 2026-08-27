@@ -5,6 +5,7 @@ import { hashPassword, passwordSchema } from "@/lib/password";
 import { rateLimit, clientKey } from "@/lib/rateLimit";
 import { audit } from "@/lib/audit";
 import { sendEmailVerification } from "@/lib/notify";
+import { recordConsentBatch } from "@/lib/consent";
 
 const schema = z.object({
   name: z.string().min(2).max(80),
@@ -15,6 +16,11 @@ const schema = z.object({
     .regex(/^\+?[0-9\s-]{8,20}$/, "رقم جوال غير صحيح")
     .optional(),
   role: z.enum(["OWNER", "INVESTOR"]).default("OWNER"),
+  consent: z.object({
+    terms: z.literal(true),
+    privacy: z.literal(true),
+    disclaimer: z.literal(true),
+  }),
 });
 
 export async function POST(req: NextRequest) {
@@ -47,6 +53,18 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.create({
     data: { name, email: emailLower, passwordHash, phone, role },
     select: { id: true, email: true, name: true, role: true },
+  });
+
+  // Persist one row per accepted document — versioned, timestamped, with IP.
+  await recordConsentBatch({
+    userId: user.id,
+    scope: "SIGNUP",
+    clauses: [
+      { key: "terms",      documentSlug: "terms" },
+      { key: "privacy",    documentSlug: "privacy" },
+      { key: "disclaimer", documentSlug: "disclaimer" },
+    ],
+    request: req,
   });
 
   await audit({

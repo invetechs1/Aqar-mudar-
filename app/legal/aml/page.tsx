@@ -1,48 +1,8 @@
-export const metadata = { title: "مكافحة غسل الأموال — عقار مدر" };
+import { LegalArticle } from "@/components/LegalArticle";
+import { getDocument } from "@/lib/legal-docs";
+
+export const metadata = { title: "AML / KYC" };
 
 export default function AMLPage() {
-  return (
-    <>
-      <h1>سياسة مكافحة غسل الأموال وتمويل الإرهاب (AML/CFT)</h1>
-      <p>
-        تلتزم منصة "عقار مدر" بمتطلبات <strong>نظام مكافحة غسل الأموال</strong> الصادر
-        بالمرسوم الملكي رقم م/20 وتاريخ 5/2/1439هـ، وأنظمة{" "}
-        <strong>مكافحة تمويل الإرهاب</strong>، وتعليمات{" "}
-        <strong>البنك المركزي السعودي (SAMA)</strong> و{" "}
-        <strong>هيئة السوق المالية (CMA)</strong>.
-      </p>
-
-      <h2>1. اعرف عميلك (KYC)</h2>
-      <ul>
-        <li>التحقق من الهوية عبر <strong>نفاذ</strong> لجميع المستثمرين.</li>
-        <li>التحقق من رقم الجوال عبر OTP.</li>
-        <li>التحقق من البريد الإلكتروني.</li>
-        <li>للاستثمارات الكبيرة (فوق 200,000 ر.س) نطلب مستندات إضافية:
-          مصدر الأموال، إثبات دخل، أو تصنيف ائتماني.</li>
-      </ul>
-
-      <h2>2. المراقبة والإبلاغ</h2>
-      <ul>
-        <li>مراقبة المعاملات آليًا لرصد الأنماط المشبوهة.</li>
-        <li>تصعيد المعاملات المشتبه بها للجنة الالتزام الداخلية.</li>
-        <li>الإبلاغ الفوري للـ <strong>وحدة التحريات المالية (SAFIU)</strong> عند
-        وجود أي اشتباه.</li>
-      </ul>
-
-      <h2>3. الأشخاص الممنوعون</h2>
-      <p>
-        نرفض التعامل مع الأشخاص المدرجين في قوائم العقوبات المحلية والدولية
-        (SAMA، OFAC، UN Sanctions).
-      </p>
-
-      <h2>4. حفظ السجلات</h2>
-      <p>نحفظ جميع سجلات KYC والمعاملات لمدة لا تقل عن 10 سنوات.</p>
-
-      <h2>5. مسؤول الالتزام</h2>
-      <p>
-        Compliance Officer:{" "}
-        <a href="mailto:compliance@aqarmudar.sa">compliance@aqarmudar.sa</a>
-      </p>
-    </>
-  );
+  return <LegalArticle doc={getDocument("aml")} />;
 }

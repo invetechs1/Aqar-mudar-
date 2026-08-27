@@ -48,6 +48,9 @@ const schema = z.object({
   NAFATH_API_URL: z.string().url().optional(),
   NAFATH_CLIENT_ID: z.string().optional(),
   NAFATH_CLIENT_SECRET: z.string().optional(),
+
+  // Product feature flags
+  FEATURE_PARTIAL_SALE: z.string().optional(),
 });
 
 type EnvSchema = z.infer<typeof schema>;

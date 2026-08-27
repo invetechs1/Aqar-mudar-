@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { AuthSplitLayout } from "@/components/AuthSplitLayout";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -43,75 +44,88 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto px-4 py-16">
-      <div className="card p-8">
-        <h1 className="text-2xl font-bold mb-2">تسجيل الدخول</h1>
-        <p className="text-slate-600 text-sm mb-6">مرحبًا بك مجددًا في عقار مدر.</p>
+    <AuthSplitLayout
+      headline="أهلًا بعودتك — سوق عقاري بشفافية مؤسسية."
+      sub="ادخل على لوحتك لعرض عقاراتك، متابعة الاستفسارات، والاطلاع على أحدث الفرص المعتمدة."
+      points={[
+        "تقارير هندسية معتمدة Alarrab Certified.",
+        "مدفوعات آمنة عبر Mada / Apple Pay / STC Pay.",
+        "تحقق هوية Nafath وحماية بيانات PDPL.",
+      ]}
+    >
+      <h1 className="font-extrabold" style={{ fontSize: 30, letterSpacing: "-0.01em" }}>
+        تسجيل الدخول
+      </h1>
+      <p className="mt-2 text-muted-2" style={{ fontSize: 14 }}>
+        مرحبًا بك مجددًا في عقار مدر.
+      </p>
 
-        <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={submit} className="mt-6 space-y-4">
+        <div>
+          <label className="label">البريد الإلكتروني</label>
+          <input
+            type="email"
+            className="input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
+        </div>
+        <div>
+          <label className="label">كلمة المرور</label>
+          <input
+            type="password"
+            className="input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
+        </div>
+        {needsTotp && (
           <div>
-            <label className="label">البريد الإلكتروني</label>
+            <label className="label">رمز التحقق (2FA)</label>
             <input
-              type="email"
-              className="input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
+              type="text"
+              inputMode="numeric"
+              pattern="\d{6}"
+              maxLength={6}
+              className="input tabular tracking-widest text-center"
+              value={totp}
+              onChange={(e) => setTotp(e.target.value)}
+              autoFocus
             />
           </div>
-          <div>
-            <label className="label">كلمة المرور</label>
-            <input
-              type="password"
-              className="input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
-          </div>
-          {needsTotp && (
-            <div>
-              <label className="label">رمز التحقق (2FA)</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="\d{6}"
-                maxLength={6}
-                className="input font-mono tracking-widest text-center"
-                value={totp}
-                onChange={(e) => setTotp(e.target.value)}
-                autoFocus
-              />
-            </div>
-          )}
-          {error && <div className="text-sm text-rose-600">{error}</div>}
-          <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? "جارٍ الدخول..." : "دخول"}
-          </button>
-        </form>
+        )}
+        {error && <div className="text-sm" style={{ color: "#b3261e" }}>{error}</div>}
+        <button type="submit" disabled={loading} className="btn-primary w-full">
+          {loading ? "جارٍ الدخول..." : "دخول"}
+        </button>
+      </form>
 
-        <div className="mt-4 text-sm text-center">
-          <Link href="/auth/forgot-password" className="text-slate-600 hover:text-brand-700">
-            نسيت كلمة المرور؟
-          </Link>
-        </div>
-
-        <div className="mt-6 text-sm text-slate-600 text-center">
-          ليس لديك حساب؟{" "}
-          <Link href="/auth/signup" className="text-brand-700 font-semibold">
-            أنشئ حسابًا
-          </Link>
-        </div>
-
-        <div className="mt-6 rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600">
-          <div className="font-semibold mb-1">حسابات تجريبية:</div>
-          <div>admin@aqarmudar.sa / Password123!</div>
-          <div>owner@aqarmudar.sa / Password123!</div>
-          <div>investor@aqarmudar.sa / Password123!</div>
-        </div>
+      <div className="mt-4 text-sm text-center">
+        <Link href="/auth/forgot-password" className="text-muted hover:text-green-700">
+          نسيت كلمة المرور؟
+        </Link>
       </div>
-    </div>
+
+      <div className="mt-6 text-sm text-muted-2 text-center">
+        ليس لديك حساب؟{" "}
+        <Link href="/auth/signup" className="text-green-700 font-semibold">
+          أنشئ حسابًا
+        </Link>
+      </div>
+
+      <div
+        className="mt-6 rounded-xl text-xs"
+        style={{ background: "#f5f8f6", border: "1px solid #e6eae8", padding: 12, color: "#5b6863" }}
+      >
+        <div className="font-semibold mb-1 text-ink">حسابات تجريبية:</div>
+        <div>admin@aqarmudar.sa / Password123!</div>
+        <div>owner@aqarmudar.sa / Password123!</div>
+        <div>investor@aqarmudar.sa / Password123!</div>
+      </div>
+    </AuthSplitLayout>
   );
 }

@@ -19,29 +19,38 @@ export function LocaleSwitcher({ current }: { current: "ar" | "en" }) {
     });
   }
 
+  const base =
+    "px-3 py-1.5 text-xs font-semibold transition uppercase tracking-wide";
+
   return (
-    <div className="inline-flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden text-xs">
+    <div
+      className="inline-flex overflow-hidden"
+      style={{
+        border: "1px solid rgba(255,255,255,.22)",
+        borderRadius: 999,
+      }}
+    >
       <button
         type="button"
         onClick={() => switchTo("ar")}
         disabled={pending}
-        className={`px-3 py-1.5 ${
-          current === "ar"
-            ? "bg-brand-600 text-white"
-            : "text-slate-700 hover:bg-slate-50"
-        }`}
+        className={base}
+        style={{
+          background: current === "ar" ? "#c9a24a" : "transparent",
+          color: current === "ar" ? "#16302a" : "rgba(255,255,255,.85)",
+        }}
       >
-        العربية
+        عربي
       </button>
       <button
         type="button"
         onClick={() => switchTo("en")}
         disabled={pending}
-        className={`px-3 py-1.5 ${
-          current === "en"
-            ? "bg-brand-600 text-white"
-            : "text-slate-700 hover:bg-slate-50"
-        }`}
+        className={base}
+        style={{
+          background: current === "en" ? "#c9a24a" : "transparent",
+          color: current === "en" ? "#16302a" : "rgba(255,255,255,.85)",
+        }}
       >
         EN
       </button>
